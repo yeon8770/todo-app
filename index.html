@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>나의 일정 & 달력 앱</title>
     <style>
-        /* 모바일 최적화 심플 화이트/그레이 네추럴 테마 */
         :root {
             --primary: #4F46E5;
             --primary-light: #EEF2F6;
@@ -14,6 +13,11 @@
             --text-primary: #1E293B;
             --text-secondary: #64748B;
             --border: #E2E8F0;
+            
+            /* 상태별 뱃지 색상 */
+            --status-todo: #64748B;
+            --status-doing: #3B82F6;
+            --status-done: #10B981;
         }
 
         * {
@@ -50,12 +54,66 @@
         }
 
         h1 {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: var(--text-primary);
+            margin-bottom: 16px;
         }
 
-        /* 입력창 디자인 - 모바일 터치 영역 확보 */
+        /* 📅 모바일 미니 캘린더 디자인 */
+        .calendar-box {
+            background: var(--bg-main);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            padding: 0 4px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            text-align: center;
+        }
+
+        .day-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding-bottom: 4px;
+        }
+
+        .calendar-day {
+            font-size: 0.85rem;
+            padding: 8px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .calendar-day.today {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .calendar-day.selected {
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+        }
+
+        /* 입력창 구역 */
         .input-group {
             display: flex;
             gap: 8px;
@@ -70,11 +128,6 @@
             font-size: 1rem;
             outline: none;
             background: var(--bg-main);
-            transition: border 0.2s;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--primary);
         }
 
         button.add-btn {
@@ -85,157 +138,212 @@
             border-radius: 14px;
             font-size: 1rem;
             font-weight: 600;
-            cursor: pointer;
-            min-height: 48px; /* 모바일 최소 터치 크기 */
+            min-height: 48px;
         }
 
-        /* 리스트 디자인 */
+        /* 리스트 및 아이템 디자인 */
         .todo-list {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .todo-item {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px;
+            flex-direction: column;
+            gap: 10px;
+            padding: 16px;
             background: var(--bg-main);
-            border-radius: 14px;
+            border-radius: 16px;
             border: 1px solid var(--border);
-            animation: fadeIn 0.3s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+        .todo-main {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
         }
 
         .todo-text {
             font-size: 1rem;
-            flex: 1;
-            margin-right: 12px;
+            font-weight: 500;
+            line-height: 1.4;
             word-break: break-all;
+            flex: 1;
         }
 
-        .todo-item.completed .todo-text {
+        /* 상태 뱃지 */
+        .status-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: white;
+            white-space: nowrap;
+        }
+        .badge-todo { background: var(--status-todo); }
+        .badge-doing { background: var(--status-doing); }
+        .badge-done { background: var(--status-done); text-decoration: line-through; }
+
+        .todo-item.done .todo-text {
             text-decoration: line-through;
             color: var(--text-secondary);
         }
 
-        .actions {
+        /* 모바일용 큼직한 액션 버튼바 */
+        .todo-actions {
             display: flex;
+            justify-content: flex-end;
             gap: 6px;
+            border-top: 1px solid rgba(0,0,0,0.03);
+            padding-top: 10px;
         }
 
-        /* 모바일에서 누르기 편한 액션 버튼 */
         .action-btn {
             border: none;
             padding: 8px 12px;
             border-radius: 8px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             min-height: 36px;
         }
 
-        .complete-btn {
-            background: #10B981;
-            color: white;
-        }
-
-        .delete-btn {
-            background: #EF4444;
-            color: white;
-        }
+        .btn-doing { background: #E0F2FE; color: #0369A1; }
+        .btn-done { background: #D1FAE5; color: #065F46; }
+        .btn-delete { background: #FEE2E2; color: #991B1B; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <header>
-            <h1 id="today-date">나의 일정 관리</h1>
+            <h1 id="today-date">2026년 6월</h1>
         </header>
 
-        <!-- 할 일 입력 구역 -->
+        <!-- 📅 미니 캘린더 구역 (이번 주 예시 부각) -->
+        <div class="calendar-box">
+            <div class="calendar-header">
+                <span id="calendar-month-year">2026년 6월</span>
+                <span style="color: var(--primary); font-size: 0.8rem;">Weekly</span>
+            </div>
+            <div class="calendar-grid">
+                <div class="day-label">일</div><div class="day-label">월</div><div class="day-label">화</div><div class="day-label">수</div><div class="day-label">목</div><div class="day-label">금</div><div class="day-label">토</div>
+                <!-- 이번 주 날짜 자동 매핑 공간 -->
+                <div class="calendar-day" onclick="selectDay(21)">21</div>
+                <div class="calendar-day today selected" onclick="selectDay(22)">22</div>
+                <div class="calendar-day" onclick="selectDay(23)">23</div>
+                <div class="calendar-day" onclick="selectDay(24)">24</div>
+                <div class="calendar-day" onclick="selectDay(25)">25</div>
+                <div class="calendar-day" onclick="selectDay(26)">26</div>
+                <div class="calendar-day" onclick="selectDay(27)">27</div>
+            </div>
+        </div>
+
+        <!-- 입력창 구역 -->
         <div class="input-group">
-            <input type="text" id="todo-input" placeholder="오늘 할 일을 적어보세요..." autocomplete="off">
+            <input type="text" id="todo-input" placeholder="선택한 날짜에 할 일 추가..." autocomplete="off">
             <button class="add-btn" onclick="addTodo()">추가</button>
         </div>
 
-        <!-- 할 일 출력 구역 -->
-        <ul class="todo-list" id="todo-list">
-            <!-- 자바스크립트로 아이템이 추가되는 공간 -->
-        </ul>
+        <!-- 할 일 리스트 -->
+        <ul class="todo-list" id="todo-list"></ul>
     </div>
 
     <script>
-        // 오늘 날짜 표시 기능
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('today-date').innerText = new Date().toLocaleDateString('ko-KR', options);
+        // 현재 날짜 상태 관리
+        let selectedDay = 22; 
+        
+        // 3단계 상태 정의: 'todo'(대기중), 'doing'(진행중), 'done'(완료)
+        let todos = JSON.parse(localStorage.getItem('my-extended-todos')) || [
+            { id: 1, day: 22, text: "프로젝트 깃허브 배포하기", status: "doing" },
+            { id: 2, day: 22, text: "모바일 레이아웃 UI 검토", status: "todo" }
+        ];
 
-        // 로컬 스토리지에서 기존 할 일 불러오기
-        let todos = JSON.parse(localStorage.getItem('my-todos')) || [];
+        function selectDay(day) {
+            selectedDay = day;
+            document.querySelectorAll('.calendar-day').forEach(el => {
+                el.classList.remove('selected');
+                if(parseInt(el.innerText) === day) el.classList.add('selected');
+            });
+            renderTodos();
+        }
 
-        // 화면에 할 일 리스트를 그려주는 함수
         function renderTodos() {
             const listEl = document.getElementById('todo-list');
             listEl.innerHTML = '';
 
-            todos.forEach((todo, index) => {
+            // 선택된 날짜의 투두만 필터링
+            const filtered = todos.filter(t => t.day === selectedDay);
+
+            if(filtered.length === 0) {
+                listEl.innerHTML = `<li style="text-align:center; color:var(--text-secondary); padding:20px; font-size:0.9rem;">이날은 등록된 일정이 없습니다.</li>`;
+                return;
+            }
+
+            filtered.forEach((todo) => {
                 const li = document.createElement('li');
-                li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                li.className = `todo-item ${todo.status === 'done' ? 'done' : ''}`;
+
+                let statusBadge = '';
+                if(todo.status === 'todo') statusBadge = '<span class="status-badge badge-todo">대기 중</span>';
+                if(todo.status === 'doing') statusBadge = '<span class="status-badge badge-doing">진행 중</span>';
+                if(todo.status === 'done') statusBadge = '<span class="status-badge badge-done">완료</span>';
 
                 li.innerHTML = `
-                    <span class="todo-text" onclick="toggleTodo(${index})">${todo.text}</span>
-                    <div class="actions">
-                        <button class="action-btn complete-btn" onclick="toggleTodo(${index})">
-                            ${todo.completed ? '해제' : '완료'}
-                        </button>
-                        <button class="action-btn delete-btn" onclick="deleteTodo(${index})">삭제</button>
+                    <div class="todo-main">
+                        <span class="todo-text">${todo.text}</span>
+                        ${statusBadge}
+                    </div>
+                    <div class="todo-actions">
+                        ${todo.status !== 'doing' && todo.status !== 'done' ? `<button class="action-btn btn-doing" onclick="updateStatus(${todo.id}, 'doing')">진행</button>` : ''}
+                        ${todo.status !== 'done' ? `<button class="action-btn btn-done" onclick="updateStatus(${todo.id}, 'done')">완료</button>` : ''}
+                        ${todo.status === 'done' || todo.status === 'doing' ? `<button class="action-btn" style="background:#E2E8F0; color:var(--text-primary);" onclick="updateStatus(${todo.id}, 'todo')">되돌리기</button>` : ''}
+                        <button class="action-btn btn-delete" onclick="deleteTodo(${todo.id})">삭제</button>
                     </div>
                 `;
                 listEl.appendChild(li);
             });
 
-            // 바뀐 데이터 저장
-            localStorage.setItem('my-todos', JSON.stringify(todos));
+            localStorage.setItem('my-extended-todos', JSON.stringify(todos));
         }
 
-        // 새로운 할 일 추가 함수
         function addTodo() {
             const inputEl = document.getElementById('todo-input');
             const text = inputEl.value.trim();
-
             if (text === '') return;
 
-            todos.push({ text: text, completed: false });
-            inputEl.value = ''; // 입력창 비우기
+            todos.push({
+                id: Date.now(),
+                day: selectedDay,
+                text: text,
+                status: 'todo'
+            });
+            inputEl.value = '';
             renderTodos();
         }
 
-        // 엔터키 입력 처리 (모바일 키보드의 '이동/완료' 버튼 대응)
-        document.getElementById('todo-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                addTodo();
+        function updateStatus(id, newStatus) {
+            const target = todos.find(t => t.id === id);
+            if(target) {
+                target.status = newStatus;
+                renderTodos();
             }
+        }
+
+        function deleteTodo(id) {
+            todos = todos.filter(t => t.id !== id);
+            renderTodos();
+        }
+
+        document.getElementById('todo-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addTodo();
         });
 
-        // 완료 상태 토글 함수
-        function toggleTodo(index) {
-            todos[index].completed = !todos[index].completed;
-            renderTodos();
-        }
-
-        // 할 일 삭제 함수
-        function deleteTodo(index) {
-            todos.splice(index, 1);
-            renderTodos();
-        }
-
-        // 앱 시작 시 최초 실행
+        // 초기 구동
         renderTodos();
     </script>
 </body>
