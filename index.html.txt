@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>나의 할일 & 달력 앱</title>
+
+  <meta name="theme-color" content="#4f8ef7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="나의앱">
+  <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;나의 앱&quot;,&quot;short_name&quot;:&quot;나의앱&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%23ffffff&quot;,&quot;theme_color&quot;:&quot;%234f8ef7&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📋%3C/text%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;any&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ===================================================
+       CSS 변수 — 디자인 색상과 폰트 정의
+       =================================================== */
+    :root {
+      --primary:        #4f8ef7;
+      --primary-light:  #e8f0fe;
+      --bg-main:        #f5f6fa;
+      --bg-sidebar:     #ffffff;
+      --card-bg:        #ffffff;
+      --text-primary:   #1a1a1a;
+      --text-secondary: #666666;
+      --text-tertiary:  #aaaaaa;
+      --border-color:   #e0e0e0;
+      --sidebar-width:  220px;
+      --font-main:      'Noto Sans KR', sans-serif;
+    }
+
+    /* ===================================================
+       리셋 & 기본 세팅
+       =================================================== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg-main);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ===================================================
+       레이아웃 (사이드바 + 메인 화면)
+       =================================================== */
+    .app-container { display: flex; min-height: 100vh; }
+
+    /* 사이드바 */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
+      transition: transform 0.25s ease;
+    }
+
+    .sidebar-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-logo {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .profile-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile-photo {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      border: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .profile-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-info { flex: 1; min-width: 0; }
+
+    .profile-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .profile-quote {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 사이드바 메뉴 버튼들 */
+    .sidebar-nav { flex: 1; padding: 12px 0; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-secondary);
+      transition: background 0.15s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-family: var(--font-main);
+    }
+
+    .nav-item:hover { background: var(--bg-main); color: var(--text-primary); }
+    .nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 500; }
+
+    .sidebar-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .sf-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-family: var(--font-main);
+      transition: background 0.15s;
+    }
+
+    .sf-btn:hover { background: var(--bg-main); }
+
+    /* 메인 콘텐츠 영역 */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      padding: 32px;
+      min-height: 100vh;
+    }
+
+    /* 페이지 전환 효과 */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-header { margin-bottom: 24px; }
+    .page-header h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .page-header p { color: var(--text-secondary); font-size: 13px; }
+
+    /* 기본 카드 스타일 */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+
+    /* ===================================================
+       버튼 스타일
+       =================================================== */
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-main);
+      transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: var(--font-main);
+      transition: background 0.15s;
+    }
+    .btn-secondary:hover { background: var(--bg-main); }
+
+    .btn-danger {
+      background: transparent;
+      color: #e53e3e;
+      border: 1px solid #e53e3e;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: var(--font-main);
+      transition: background 0.15s;
+    }
+    .btn-danger:hover { background: #fff5f5; }
+
+    /* 입력창 */
+    .input-field {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: var(--font-main);
+      background: #fff;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .input-field:focus { border-color: var(--primary); }
+
+    .form-row { margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+
+    /* ===================================================
+       [추가] 할일 관리 전용 UI 스타일
+       =================================================== */
+    .todo-input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .todo-input-group .input-field { flex: 1; min-width: 200px; }
+    .todo-input-group .todo-date-input { width: 150px; }
+
+    /* 필터 탭 (전체/시작전/진행중/완료) */
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+    }
+    .filter-tab {
+      background: none;
+      border: none;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      border-radius: 20px;
+    }
+    .filter-tab.active {
+      background: var(--primary);
+      color: white;
+      font-weight: 500;
+    }
+
+    /* 할일 아이템 리스트 디자인 */
+    .task-list { display: flex; flex-direction: column; gap: 10px; }
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      gap: 12px;
+    }
+    .task-item-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+    .task-text { font-size: 14px; font-weight: 500; word-break: break-all; }
+    .task-date { font-size: 11px; color: var(--text-tertiary); margin-left: 8px; white-space: nowrap; }
+    
+    /* 상태별 버튼 색상 설정 */
+    .status-btn {
+      padding: 4px 8px;
+      font-size: 11px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      background: #fcfcfc;
+    }
+    .status-btn.todo { color: #e53e3e; border-color: #feb2b2; background: #fff5f5; }
+    .status-btn.doing { color: #dd6b20; border-color: #fbd38d; background: #fffaf0; }
+    .status-btn.done { color: #38a169; border-color: #9ae6b4; background: #f0fff4; }
+
+    /* 완료 시 줄 긋기 디자인 */
+    .task-item.completed .task-text {
+      text-decoration: line-through;
+      color: var(--text-tertiary);
+    }
+
+    /* ===================================================
+       [추가] 달력 전용 UI 스타일
+       =================================================== */
+    .calendar-control {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: var(--border-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .calendar-header-cell {
+      background: #f8f9fa;
+      padding: 10px 5px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .calendar-day-cell {
+      background: #ffffff;
+      min-height: 90px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .calendar-day-cell.other-month { background: #fafafa; opacity: 0.5; }
+    .calendar-day-cell.today { background: var(--primary-light); }
+    .day-number { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+    
+    /* 달력 칸 안의 작은 할일 글자들 (... 효과 포함) */
+    .calendar-todo-item {
+      font-size: 10px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      background: #e8f0fe;
+      color: #2b6cb0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis; /* 글자가 넘치면 ... 으로 바꿈 */
+      line-height: 1.2;
+    }
+    .calendar-todo-item.done {
+      background: #e6fffa;
+      color: #234e52;
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    /* 설정 탭 내부 */
+    .settings-tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; }
+    .settings-tab { background: transparent; border: none; padding: 10px 18px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-secondary); border-bottom: 3px solid transparent; margin-bottom: -2px; font-family: var(--font-main); transition: all 0.2s; }
+    .settings-tab:hover { color: var(--text-primary); background: var(--bg-main); }
+    .settings-tab.active { color: var(--text-primary); border-bottom-color: var(--primary); }
+    .settings-section { display: none; }
+    .settings-section.active { display: block; }
+
+    /* 모달창 */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 500; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: #fff; border-radius: 12px; padding: 24px; width: 100%; max-width: 420px; margin: 16px; }
+    .modal-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+    /* 알림 토스트 */
+    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a1a; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; z-index: 9999; transition: transform 0.25s ease; pointer-events: none; white-space: nowrap; }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* 모바일 반응형 */
+    .mobile-top-bar { display: none; position: fixed; top: 0; left: 0; right: 0; height: 52px; background: #fff; border-bottom: 1px solid var(--border-color); align-items: center; padding: 0 16px; gap: 12px; z-index: 200; }
+    .mobile-hamburger { background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px; color: var(--text-primary); }
+    .mobile-title { font-size: 16px; font-weight: 700; }
+
+    @media (max-width: 768px) {
+      .mobile-top-bar { display: flex; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
+      .main-content { margin-left: 0; padding: 72px 16px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="mobile-top-bar" id="mobileTopBar">
+    <button class="mobile-hamburger" onclick="toggleSidebar()">☰</button>
+    <div class="mobile-title" id="mobilePageTitle">나의 앱</div>
+  </div>
+
+  <div class="app-container">
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">📋 나의 앱</div>
+        <div class="profile-area">
+          <div class="profile-photo" id="profilePhoto" onclick="showPage('settingsPage', null, '⚙️ 설정')">👤</div>
+          <div class="profile-info">
+            <div class="profile-name" id="profileName">이름을 설정하세요</div>
+            <div class="profile-quote" id="profileQuote">뭐든지 할 수 있어!</div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" onclick="showPage('homePage', this, '🏠 홈')">🏠 홈</button>
+        <button class="nav-item" onclick="showPage('taskPage', this, '📝 할일 목록')">📝 할일 목록</button>
+        <button class="nav-item" onclick="showPage('calendarPage', this, '📅 달력 보기')">📅 달력 보기</button>
+        <button class="nav-item" onclick="showPage('settingsPage', this, '⚙️ 설정')">⚙️ 설정</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="sf-btn" onclick="location.reload()">🔄 새로고침</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+
+      <div id="homePage" class="page active">
+        <div class="page-header">
+          <h2>🏠 홈</h2>
+          <p id="welcomeMessage">환영합니다!</p>
+        </div>
+        <div class="card">
+          <h3>오늘 나의 상태</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 10px;">오늘 마감인 할 일 개수를 알려드릴게요.</p>
+          <p style="font-size: 16px; font-weight: 600; color: var(--primary);" id="homeSummaryText">데이터를 불러오는 중...</p>
+        </div>
+      </div>
+
+      <div id="taskPage" class="page">
+        <div class="page-header">
+          <h2>📝 할일 목록</h2>
+          <p>오늘 할 일을 관리하세요</p>
+        </div>
+        
+        <div class="card">
+          <h3>새로운 할일 추가</h3>
+          <div class="todo-input-group">
+            <input type="text" id="todoInput" class="input-field" placeholder="무엇을 해야 하나요?">
+            <input type="date" id="todoDateInput" class="input-field todo-date-input">
+            <button class="btn-primary" onclick="addTask()">추가하기</button>
+          </div>
+        </div>
+
+        <div class="filter-tabs">
+          <button class="filter-tab active" id="filter-all" onclick="changeFilter('all')">전체보기</button>
+          <button class="filter-tab" id="filter-todo" onclick="changeFilter('todo')">시작 전</button>
+          <button class="filter-tab" id="filter-doing" onclick="changeFilter('doing')">진행 중</button>
+          <button class="filter-tab" id="filter-done" onclick="changeFilter('done')">완료</button>
+        </div>
+
+        <div class="task-list" id="taskListContainer">
+          </div>
+      </div>
+
+      <div id="calendarPage" class="page">
+        <div class="page-header">
+          <h2>📅 달력 보기</h2>
+          <p>월별 일정을 한눈에 모아보세요</p>
+        </div>
+        <div class="card">
+          <div class="calendar-control">
+            <button class="btn-secondary" onclick="moveMonth(-1)">◀ 이전 달</button>
+            <h3 id="calendarMonthTitle" style="margin-bottom: 0; font-size: 18px;">2026년 6월</h3>
+            <button class="btn-secondary" onclick="moveMonth(1)">다음 달 ▶</button>
+          </div>
+          <div class="calendar-grid" id="calendarGrid">
+            </div>
+        </div>
+      </div>
+
+      <div id="settingsPage" class="page">
+        <div class="page-header">
+          <h2>⚙️ 설정</h2>
+          <p>앱 설정을 관리하세요</p>
+        </div>
+
+        <div class="settings-tabs">
+          <button class="settings-tab active" onclick="showSettingsSection('profile', this)">👤 프로필</button>
+          <button class="settings-tab" onclick="showSettingsSection('design', this)">🎨 디자인</button>
+          <button class="settings-tab" onclick="showSettingsSection('data', this)">📦 데이터</button>
+        </div>
+
+        <div id="settingsSectionProfile" class="settings-section active">
+          <div class="card">
+            <h3>👤 프로필 설정</h3>
+            <div class="form-row" style="text-align: center; margin-bottom: 20px;">
+              <div id="profilePhotoPreview" onclick="document.getElementById('profilePhotoInput').click()"
+                style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary-light); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer; margin: 0 auto 8px; overflow: hidden;">
+                👤
+              </div>
+              <input type="file" id="profilePhotoInput" accept="image/*" style="display: none;" onchange="handleProfilePhoto(event)">
+              <p style="font-size: 12px; color: var(--text-tertiary);">클릭하여 프로필 사진 변경</p>
+            </div>
+            <div class="form-row">
+              <label class="form-label">이름</label>
+              <input class="input-field" id="profileNameInput" type="text" placeholder="이름을 입력하세요">
+            </div>
+            <div class="form-row">
+              <label class="form-label">한마디</label>
+              <input class="input-field" id="profileQuoteInput" type="text" placeholder="뭐든지 할 수 있어!">
+            </div>
+            <button class="btn-primary" onclick="saveProfile()">저장</button>
+          </div>
+        </div>
+
+        <div id="settingsSectionDesign" class="settings-section">
+          <div class="card">
+            <h3>🎨 디자인 설정</h3>
+            <div class="form-row">
+              <label class="form-label">메인 포인트 색상</label>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="color" id="colorPrimary" value="#4f8ef7"
+                  oninput="document.documentElement.style.setProperty('--primary', this.value); document.documentElement.style.setProperty('--primary-light', this.value + '22'); document.getElementById('colorPrimaryValue').textContent = this.value;">
+                <span id="colorPrimaryValue" style="font-size: 13px; color: var(--text-secondary); font-family: monospace;">#4f8ef7</span>
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">사이드바 배경 색상</label>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="color" id="colorSidebar" value="#ffffff"
+                  oninput="document.documentElement.style.setProperty('--bg-sidebar', this.value);">
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">기본 폰트</label>
+              <select class="input-field" id="fontFamily" onchange="document.documentElement.style.setProperty('--font-main', this.value);" style="width: auto;">
+                <option value="'Noto Sans KR', sans-serif">Noto Sans KR (기본)</option>
+                <option value="'Malgun Gothic', sans-serif">맑은 고딕</option>
+                <option value="-apple-system, BlinkMacSystemFont, sans-serif">시스템 기본</option>
+              </select>
+            </div>
+            <button class="btn-primary" onclick="saveDesign()">저장</button>
+            <button class="btn-secondary" style="margin-left: 8px;" onclick="resetDesign()">기본값으로</button>
+          </div>
+        </div>
+
+        <div id="settingsSectionData" class="settings-section">
+          <div class="card">
+            <h3>📦 데이터 관리</h3>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
+              앱에 저장된 모든 데이터(할일 목록, 프로필, 디자인 정보)를 초기화합니다.
+            </p>
+            <button class="btn-danger" onclick="clearAllData()">🗑 모든 데이터 초기화</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal-box">
+      <h3 id="modalTitle">확인</h3>
+      <p id="modalMessage" style="color: var(--text-secondary);"></p>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal()">취소</button>
+        <button class="btn-primary" id="modalConfirmBtn">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    // 1. 상태 및 임시 데이터 변수 정의
+    let tasks = [];            // 할일들을 담아둘 바구니
+    let currentFilter = 'all'; // 기본 필터 설정 (전체보기)
+    let currentDate = new Date(); // 현재 보고 있는 달력의 기준 날짜
+    
+    // 프로필 기본 상자값
+    let profileData = { name: '', quote: '', photo: '' };
+
+    // 2. 기초 유틸리티 기능들 (토스트 알림, 화면 전환)
+    function showToast(message, duration = 2000) {
+      const t = document.getElementById('toast');
+      t.textContent = message;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    function showPage(pageId, navBtn, title) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      if (navBtn) navBtn.classList.add('active');
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('mobilePageTitle').textContent = title || '나의 앱';
+      
+      // 페이지가 바뀔 때 최신 데이터 상태로 다시 그려주기
+      if (pageId === 'taskPage') renderTaskList();
+      if (pageId === 'calendarPage') renderCalendar();
+      if (pageId === 'homePage') updateHomeSummary();
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    function openModal(title, message, onConfirm) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalMessage').textContent = message;
+      document.getElementById('modal').classList.add('open');
+      document.getElementById('modalConfirmBtn').onclick = () => { onConfirm(); closeModal(); };
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('open');
+    }
+
+    function showSettingsSection(key, btn) {
+      document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.settings-tab').forEach(b => b.classList.remove('active'));
+      document.getElementById('settingsSection' + key.charAt(0).toUpperCase() + key.slice(1)).classList.add('active');
+      if (btn) btn.classList.add('active');
+    }
+
+    // =====================================================
+    // CORE FUNCTION: 할 일 관리 핵심 기능 구현
+    // =====================================================
+
+    // [추가] 할일 등록하기
+    function addTask() {
+      const input = document.getElementById('todoInput');
+      const dateInput = document.getElementById('todoDateInput');
+      
+      const text = input.value.trim();
+      const date = dateInput.value; // 연-월-일 형식으로 가져옴
+
+      if (!text) {
+        showToast('❌ 할 일을 입력해 주세요!');
+        return;
+      }
+      if (!date) {
+        showToast('❌ 목표 날짜를 골라주세요!');
+        return;
+      }
+
+      // 새 할일 카드 묶음 만들기
+      const newTask = {
+        id: Date.now(), // 컴퓨터가 식별할 고유 시각 숫자
+        text: text,
+        date: date,
+        status: 'todo' // 기본 설정은 시작전('todo') 상태
+      };
+
+      tasks.push(newTask);
+      saveTasks();        // 창고에 저장
+      renderTaskList();   // 목록 다시 그리기
+      
+      input.value = '';   // 입력창 청소
+      showToast('✅ 할 일이 추가되었습니다!');
+    }
+
+    // [상태 전환] 시작전 -> 진행중 -> 완료 상태를 빙글빙글 토글하는 기능
+    function toggleTaskStatus(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+
+      if (task.status === 'todo') {
+        task.status = 'doing';
+        showToast('⚡ 진행 중으로 변경했어요!');
+      } else if (task.status === 'doing') {
+        task.status = 'done';
+        showToast('🎉 축하합니다! 완료 상태로 변경 완료!');
+      } else {
+        task.status = 'todo';
+        showToast('↩️ 다시 시작 전으로 되돌렸어요.');
+      }
+
+      saveTasks();
+      renderTaskList();
+    }
+
+    // [삭제] 할일 버리기
+    function deleteTask(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      saveTasks();
+      renderTaskList();
+      showToast('🗑 할 일이 삭제되었습니다.');
+    }
+
+    // [필터] 전체/시작전/진행중/완료 보기 전환
+    function changeFilter(filterType) {
+      currentFilter = filterType;
+      document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+      document.getElementById('filter-' + filterType).classList.add('active');
+      renderTaskList();
+    }
+
+    // [그리기] 사용자가 추가한 할일 목록 화면 채워주기
+    function renderTaskList() {
+      const container = document.getElementById('taskListContainer');
+      container.innerHTML = ''; // 기존 리스트 리셋
+
+      // 필터 타입에 맞춰서 걸러내기
+      let filteredTasks = tasks;
+      if (currentFilter !== 'all') {
+        filteredTasks = tasks.filter(t => t.status === currentFilter);
+      }
+
+      // 등록된 데이터가 아무것도 없을 때 안내문구
+      if (filteredTasks.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-tertiary); text-align: center; padding: 40px 0;">해당되는 할 일이 없습니다.</p>`;
+        return;
+      }
+
+      // 데이터 정렬: 날짜 순서대로 정렬해서 보기 편하게 만듦
+      filteredTasks.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+      // 각 데이터 카드를 화면에 찍어주기
+      filteredTasks.forEach(task => {
+        const item = document.createElement('div');
+        item.className = 'task-item' + (task.status === 'done' ? ' completed' : '');
+        
+        // 상태별 예쁜 버튼 글씨 세팅
+        let statusText = '시작 전';
+        if (task.status === 'doing') statusText = '진행 중';
+        if (task.status === 'done') statusText = '완료';
+
+        item.innerHTML = `
+          <div class="task-item-left">
+            <span class="task-text">${task.text}</span>
+            <span class="task-date">📅 ${task.date}</span>
+          </div>
+          <div style="display:flex; gap: 8px; align-items:center;">
+            <button class="status-btn ${task.status}" onclick="toggleTaskStatus(${task.id})">${statusText}</button>
+            <button class="btn-danger" style="padding: 4px 8px; font-size:11px;" onclick="deleteTask(${task.id})">삭제</button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // =====================================================
+    // CALENDAR FUNCTION: 달력 자동 생성 및 연동 구현
+    // =====================================================
+    function moveMonth(direction) {
+      currentDate.setMonth(currentDate.getMonth() + direction);
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      const title = document.getElementById('calendarMonthTitle');
+      grid.innerHTML = ''; // 옛날 달력 청소
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      title.textContent = `${year}년 ${month + 1}월`;
+
+      // 달력 헤더 (일~토) 깔기
+      const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
+      weekDays.forEach(d => {
+        const hCell = document.createElement('div');
+        hCell.className = 'calendar-header-cell';
+        hCell.textContent = d;
+        grid.appendChild(hCell);
+      });
+
+      // 이번 달의 첫날과 마지막 날짜 구하기
+      const firstDayIdx = new Date(year, month, 1).getDay();
+      const lastDate = new Date(year, month + 1, 0).getDate();
+      
+      // 지난달 마지막 날짜 구하기 (빈칸 메꾸기용)
+      const prevLastDate = new Date(year, month, 0).getDate();
+
+      // 1. 지난달 날짜 채워넣기 (비활성화 스타일)
+      for (let i = firstDayIdx - 1; i >= 0; i--) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day-cell other-month';
+        cell.innerHTML = `<span class="day-number">${prevLastDate - i}</span>`;
+        grid.appendChild(cell);
+      }
+
+      // 2. 이번 달 날짜 채워넣기
+      const today = new Date();
+      for (let date = 1; date <= lastDate; date++) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day-cell';
+        
+        // 오늘 날짜 하이라이트 효과
+        if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === date) {
+          cell.classList.add('today');
+        }
+
+        cell.innerHTML = `<span class="day-number">${date}</span>`;
+
+        // 이 날짜에 해당하는 마감 할 일이 있는지 서치하기
+        // 날짜를 컴퓨터가 읽을 수 있는 '2026-06-22' 형태로 포맷팅
+        const currentCellStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+        const dayTasks = tasks.filter(t => t.date === currentCellStr);
+
+        // 발견된 할 일이 있다면 달력 칸 안에 작은 뱃지로 심어두기
+        dayTasks.forEach(t => {
+          const todoBadge = document.createElement('div');
+          todoBadge.className = 'calendar-todo-item' + (t.status === 'done' ? ' done' : '');
+          todoBadge.textContent = t.text; // CSS 규칙 덕분에 글자가 길면 자동으로 ... 처리 됨
+          todoBadge.title = t.text; // 마우스 대면 전체 글자 보이게 툴팁 세팅
+          cell.appendChild(todoBadge);
+        });
+
+        grid.appendChild(cell);
+      }
+
+      // 3. 다음달 날짜로 빈칸 채우기 (정사각형 모양 맞추기)
+      const totalCells = grid.children.length - 7; // 요일 헤더 제외 수
+      const nextMonthCellsNeeded = 42 - totalCells; // 6주 치 칸 채우기 기준
+      if(nextMonthCellsNeeded > 0 && nextMonthCellsNeeded < 7) {
+        for (let i = 1; i <= nextMonthCellsNeeded; i++) {
+          const cell = document.createElement('div');
+          cell.className = 'calendar-day-cell other-month';
+          cell.innerHTML = `<span class="day-number">${i}</span>`;
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    // =====================================================
+    // HOME & SETTINGS DATA FUNCTION: 정보 저장소(LocalStorage) 연동 및 설정
+    // =====================================================
+
+    // 홈 화면 대시보드 업데이트
+    function updateHomeSummary() {
+      // 2026년 오늘 날짜 포맷 생성
+      const todayStr = new Date().toISOString().split('T')[0];
+      const todayTasks = tasks.filter(t => t.date === todayStr);
+      const remaining = todayTasks.filter(t => t.status !== 'done').length;
+
+      const summaryText = document.getElementById('homeSummaryText');
+      if (todayTasks.length === 0) {
+        summaryText.innerHTML = `오늘 예정된 마감 일정이 없습니다. 가벼운 하루 되세요! 😊`;
+      } else {
+        summaryText.innerHTML = `오늘 마감인 일은 총 <strong>${todayTasks.length}건</strong>이며, 그 중 진행중인 일은 <strong>${remaining}건</strong> 남았습니다!`;
+      }
+    }
+
+    // 데이터 영구 저장 기능 (브라우저를 꺼도 안전함)
+    function saveTasks() {
+      localStorage.setItem('my_todo_tasks', JSON.stringify(tasks));
+    }
+
+    function loadTasks() {
+      const stored = localStorage.getItem('my_todo_tasks');
+      if (stored) {
+        tasks = JSON.parse(stored);
+      } else {
+        tasks = [];
+      }
+    }
+
+    // 프로필 정보 설정창 저장
+    function saveProfile() {
+      profileData.name  = document.getElementById('profileNameInput').value.trim();
+      profileData.quote = document.getElementById('profileQuoteInput').value.trim();
+      
+      localStorage.setItem('my_todo_profile', JSON.stringify(profileData));
+      applyProfile();
+      showToast('✅ 프로필이 안전하게 영구 저장되었어요!');
+    }
+
+    function handleProfilePhoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        profileData.photo = e.target.result;
+        localStorage.setItem('my_todo_profile', JSON.stringify(profileData));
+        applyProfile();
+        showToast('✅ 프로필 이미지가 등록되었습니다!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function applyProfile() {
+      const name  = profileData.name  || '이름을 설정하세요';
+      const quote = profileData.quote || '뭐든지 할 수 있어!';
+      const photo = profileData.photo;
+
+      document.getElementById('profileName').textContent  = name;
+      document.getElementById('profileQuote').textContent = quote;
+      
+      document.getElementById('profileNameInput').value = profileData.name;
+      document.getElementById('profileQuoteInput').value = profileData.quote;
+
+      const photoEls = [document.getElementById('profilePhoto'), document.getElementById('profilePhotoPreview')];
+      photoEls.forEach(el => {
+        if (!el) return;
+        el.innerHTML = photo ? '<img src="' + photo + '" alt="프로필">' : '👤';
+      });
+
+      // 홈 화면 환영 인사도 커스텀 변경
+      if (profileData.name) {
+        document.getElementById('welcomeMessage').textContent = `반가워요, ${profileData.name}님! 오늘도 파이팅이에요!🔥`;
+      }
+    }
+
+    // 디자인 설정값 저장
+    function saveDesign() {
+      const primary = document.getElementById('colorPrimary').value;
+      const sidebar = document.getElementById('colorSidebar').value;
+      const font    = document.getElementById('fontFamily').value;
+
+      const designObj = { primary, sidebar, font };
+      localStorage.setItem('my_todo_design', JSON.stringify(designObj));
+      showToast('🎨 나만의 디자인 색상이 저장되었습니다!');
+    }
+
+    function applyDesign() {
+      const stored = localStorage.getItem('my_todo_design');
+      if (stored) {
+        const { primary, sidebar, font } = JSON.parse(stored);
+        document.documentElement.style.setProperty('--primary', primary);
+        document.documentElement.style.setProperty('--primary-light', primary + '22');
+        document.documentElement.style.setProperty('--bg-sidebar', sidebar);
+        document.documentElement.style.setProperty('--font-main', font);
+
+        // 디자인 입력창 값들 동기화
+        document.getElementById('colorPrimary').value = primary;
+        document.getElementById('colorPrimaryValue').textContent = primary;
+        document.getElementById('colorSidebar').value = sidebar;
+        document.getElementById('fontFamily').value = font;
+      }
+    }
+
+    function resetDesign() {
+      document.documentElement.style.removeProperty('--primary');
+      document.documentElement.style.removeProperty('--primary-light');
+      document.documentElement.style.removeProperty('--bg-sidebar');
+      document.documentElement.style.removeProperty('--font-main');
+      
+      document.getElementById('colorPrimary').value = '#4f8ef7';
+      document.getElementById('colorPrimaryValue').textContent = '#4f8ef7';
+      document.getElementById('colorSidebar').value = '#ffffff';
+      document.getElementById('fontFamily').value   = "'Noto Sans KR', sans-serif";
+      
+      localStorage.removeItem('my_todo_design');
+      showToast('↩️ 원래 기본 디자인 컬러로 돌아왔습니다.');
+    }
+
+    // 데이터 완전 포맷 초기화 기능
+    function clearAllData() {
+      openModal(
+        '데이터 초기화 경고',
+        '등록된 할일 리스트, 프로필, 디자인 세팅을 포함한 모든 정보가 지워집니다. 정말 초기화할까요?',
+        function() {
+          localStorage.clear();
+          showToast('🗑 모든 데이터가 파기되었습니다. 초기화 중...');
+          setTimeout(() => location.reload(), 800);
+        }
+      );
+    }
+
+    // =====================================================
+    // 앱 구동 시작 시점 실행
+    // =====================================================
+    window.addEventListener('load', function() {
+      // 1. 입력창 기본 오늘 날짜 자동 등록 세팅
+      const todayString = new Date().toISOString().split('T')[0];
+      document.getElementById('todoDateInput').value = todayString;
+
+      // 2. 브라우저 저장소 데이터 불러오기
+      loadTasks();
+
+      const storedProfile = localStorage.getItem('my_todo_profile');
+      if (storedProfile) profileData = JSON.parse(storedProfile);
+      
+      // 3. 불러온 데이터 화면 반영 및 세팅
+      applyProfile();
+      applyDesign();
+      updateHomeSummary();
+    });
+  </script>
+</body>
+</html>
+
